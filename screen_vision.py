@@ -2,14 +2,15 @@ import mss
 import numpy as np
 import cv2
 import time
+import pyautogui
 
 # ==============================
 # CONFIGURACIÓN
 # ==============================
 
 GAME_REGION = {
-    "top": 280,
-    "left": 600,
+    "top": 160,
+    "left": 300,
     "width": 800,
     "height": 700
 }
@@ -46,7 +47,37 @@ def split_regions(img):
 
     return board, next_region
 
+template = cv2.imread("Hold_image.png", 0)
+w, h = template.shape[::-1]
 
+def detect_game_region(template):
+
+    with mss.mss() as sct:
+
+        monitor = sct.monitors[1]
+
+
+        screenshot = sct.grab(monitor)
+        img = np.array(screenshot)
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+
+        result = cv2.matchTemplate(gray, template, cv2.TM_CCOEFF_NORMED)
+
+        threshold = 0.8
+        locations = np.where(result >= threshold)
+
+        for pt in zip(*locations[::-1]):
+
+            cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,0), 2)
+
+            print("Tablero encontrado en:", pt)
+
+        cv2.imshow("Detection", img)
+
+        # if cv2.waitKey(1) == 27:
+        #     break
+
+    cv2.destroyAllWindows()
 
 
 
@@ -179,6 +210,8 @@ def detect_next(next_img):
 while True:
     img = capture_game()
     board_img, next_img = split_regions(img)
+    # x, y = pyautogui.position()
+    # print(f"Mouse position: {x}, {y}")
 
 
 

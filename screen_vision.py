@@ -75,14 +75,163 @@ def detect_game_region(imagen):
 
         #cv2.imshow("Detection", img)
 
-        time.sleep(0.2)
+        #time.sleep(0.2)
 
         # if cv2.waitKey(1) == 27:
         #     break
 
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
 
+class Vision:
 
+    def __init__(self):
+        self.sct = mss.mss()
+        self.monitor = self.sct.monitors[1]
+        self.board_bbox = None
+
+    # -------------------------
+    # SCREEN CAPTURE
+    # -------------------------
+
+    def capture_screen(self):
+        screenshot = np.array(self.sct.grab(self.monitor))
+        frame = cv2.cvtColor(screenshot, cv2.COLOR_BGRA2BGR)
+        return frame
+
+    # -------------------------
+    # LOCATE BOARD
+    # -------------------------
+
+    def locate_board(self, frame):
+
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+
+        edges = cv2.Canny(gray, 50, 150)
+
+        contours, _ = cv2.findContours(
+            edges,
+            cv2.RETR_TREE,
+            cv2.CHAIN_APPROX_SIMPLE
+        )
+
+        best = None
+        best_area = 0
+
+        for c in contours:
+
+            x, y, w, h = cv2.boundingRect(c)
+
+            ratio = h / float(w)
+
+            area = w * h
+
+            # tablero Tetris ~ 2:1
+            if 1.8 < ratio < 2.4 and area > best_area:
+
+                if w > 200:
+                    best = (x, y, w, h)
+                    best_area = area
+
+        self.board_bbox = best
+        return best
+
+    # -------------------------
+    # READ GRID
+    # -------------------------
+
+    def read_board(self, frame):
+
+        if self.board_bbox is None:
+            return None
+
+        x, y, w, h = self.board_bbox
+
+        cell_w = w / 10
+        cell_h = h / 20
+
+        board = [[0 for _ in range(10)] for _ in range(20)]
+
+        for row in range(20):
+            for col in range(10):
+
+                cx = int(x + col * cell_w + cell_w / 2)
+                cy = int(y + row * cell_h + cell_h / 2)
+
+                pixel = frame[cy, cx]
+
+                if np.mean(pixel) < 40:
+                    board[row][col] = 0
+                else:
+                    board[row][col] = 1
+
+        return board
+
+    # -------------------------
+    # READ CURRENT PIECE (placeholder)
+    # -------------------------
+
+    def detect_current_piece(self, frame):
+        """
+        Placeholder.
+        Requiere calibración de color.
+        """
+        return None
+
+    # -------------------------
+    # READ NEXT QUEUE (placeholder)
+    # -------------------------
+
+    def detect_next_queue(self, frame):
+        """
+        Placeholder.
+        Normalmente se hace con template matching.
+        """
+        return []
+
+    # -------------------------
+    # GET GAME STATE
+    # -------------------------
+
+    def get_state(self):
+
+        frame = self.capture_screen()
+
+        if self.board_bbox is None:
+            self.locate_board(frame)
+
+        board = self.read_board(frame)
+
+        current_piece = self.detect_current_piece(frame)
+
+        next_queue = self.detect_next_queue(frame)
+
+        return {
+            "board": board,
+            "current_piece": current_piece,
+            "next_queue": next_queue
+        }
+
+    # -------------------------
+    # DEBUG VISUALIZATION
+    # -------------------------
+
+    def debug_show(self, frame):
+
+        if self.board_bbox:
+
+            x, y, w, h = self.board_bbox
+
+            cv2.rectangle(
+                frame,
+                (x, y),
+                (x + w, y + h),
+                (0, 255, 0),
+                2
+            )
+
+        cv2.imshow("vision", frame)
+
+        cv2.waitKey(1)
 
 
 
@@ -210,10 +359,15 @@ def detect_next(next_img):
 # LOOP PRINCIPAL
 # ==============================
 
+vision = Vision()
 
 while True:
     detect_game_region(template)
     detect_game_region(template2)
+    frame = vision.capture_screen()
+    vision.locate_board(frame)
+    vision.read_board(frame)
+    vision.debug_show(frame)
     img = capture_game()
     board_img, next_img = split_regions(img)
     # x, y = pyautogui.position()
@@ -243,6 +397,6 @@ while True:
     if cv2.waitKey(1) == 27:
         break
     
-    time.sleep(0.2)
+    #time.sleep(0.2)
 
 cv2.destroyAllWindows()

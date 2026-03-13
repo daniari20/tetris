@@ -9,8 +9,8 @@ import pyautogui
 # ==============================
 
 GAME_REGION = {
-    "top": 160,
-    "left": 300,
+    "top": 250,
+    "left": 600,
     "width": 800,
     "height": 700
 }
@@ -47,10 +47,11 @@ def split_regions(img):
 
     return board, next_region
 
-template = cv2.imread("Hold_image.png", 0)
+template = cv2.imread("hold_image.png", 0)
+template2 = cv2.imread("next_image.png", 0)
 w, h = template.shape[::-1]
 
-def detect_game_region(template):
+def detect_game_region(imagen):
 
     with mss.mss() as sct:
 
@@ -68,11 +69,13 @@ def detect_game_region(template):
 
         for pt in zip(*locations[::-1]):
 
-            cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,0), 2)
+            # cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,0), 2)
 
             print("Tablero encontrado en:", pt)
 
-        cv2.imshow("Detection", img)
+        #cv2.imshow("Detection", img)
+
+        time.sleep(0.2)
 
         # if cv2.waitKey(1) == 27:
         #     break
@@ -207,11 +210,14 @@ def detect_next(next_img):
 # LOOP PRINCIPAL
 # ==============================
 
+
 while True:
+    detect_game_region(template)
+    detect_game_region(template2)
     img = capture_game()
     board_img, next_img = split_regions(img)
     # x, y = pyautogui.position()
-    # print(f"Mouse position: {x}, {y}")
+    # print(f"Mouse position: {x}, {y}")  
 
 
 

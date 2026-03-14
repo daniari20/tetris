@@ -67,11 +67,11 @@ def detect_game_region(imagen):
         threshold = 0.8
         locations = np.where(result >= threshold)
 
-        for pt in zip(*locations[::-1]):
+        #for pt in zip(*locations[::-1]):
 
             # cv2.rectangle(img, pt, (pt[0] + w, pt[1] + h), (0,255,0), 2)
 
-            print("Tablero encontrado en:", pt)
+            #print("Tablero encontrado en:", pt)
 
         #cv2.imshow("Detection", img)
 
@@ -133,6 +133,7 @@ class Vision:
                     best_area = area
 
         self.board_bbox = best
+        print("best", best)
         return best
 
     # -------------------------
@@ -181,12 +182,35 @@ class Vision:
     # READ NEXT QUEUE (placeholder)
     # -------------------------
 
-    def detect_next_queue(self, frame):
-        """
-        Placeholder.
-        Normalmente se hace con template matching.
-        """
-        return []
+    def detect_next_queue(self, frame, best):
+
+
+        if best:
+            next_region = frame[
+                int(best[1] + 0.02*best[3]): int(best[1] + 0.8*best[3]),
+                int(best[0] + best[2] + 0.03*best[2]): int(best[0] + best[2] + 0.6*best[2])
+            ]
+            cv2.imshow("next", next_region)
+            return next_region
+
+
+    # -------------------------
+    # READ HOLD 
+    # -------------------------
+
+    def detect_hold_region(self, frame, best):
+
+
+        if best:
+
+            hold_region = frame[
+            int(best[1] + 0.02*best[3]): int(best[1] + 0.25*best[3]),
+            int(best[0] - 0.5*best[2]): int(best[0] - 0.05*best[2])
+            ]
+            cv2.imshow("hold", hold_region)
+            return hold_region
+
+
 
     # -------------------------
     # GET GAME STATE
@@ -230,6 +254,7 @@ class Vision:
             )
 
         cv2.imshow("vision", frame)
+
 
         cv2.waitKey(1)
 
@@ -365,8 +390,10 @@ while True:
     detect_game_region(template)
     detect_game_region(template2)
     frame = vision.capture_screen()
-    vision.locate_board(frame)
-    vision.read_board(frame)
+    best=vision.locate_board(frame)
+    next_image=vision.read_board(frame)
+    next_region = vision.detect_next_queue(frame, best)
+    hold_region= vision.detect_hold_region(frame,best)
     vision.debug_show(frame)
     img = capture_game()
     board_img, next_img = split_regions(img)
@@ -375,7 +402,7 @@ while True:
 
 
 
-
+    board = vision.read_board(frame)
     
     state = build_board_state(board_img)
     
@@ -385,14 +412,14 @@ while True:
     
 
 
-
+    print("Board", board)
     print("Falling:", falling_piece)
     print("Stack groups:", len(stack_pieces))
     print("Next:", next_pieces)
     print("-"*40)
     
-    cv2.imshow("Board", board_img)
-    cv2.imshow("Next", next_img)
+    # cv2.imshow("Board", board_img)
+    # cv2.imshow("Next", next_img)
     
     if cv2.waitKey(1) == 27:
         break

@@ -190,8 +190,9 @@ class Vision:
                 int(best[1] + 0.02*best[3]): int(best[1] + 0.8*best[3]),
                 int(best[0] + best[2] + 0.03*best[2]): int(best[0] + best[2] + 0.6*best[2])
             ]
-            cv2.imshow("next", next_region)
-            return next_region
+            if next_region.size>0:
+                cv2.imshow("next", next_region)
+                return next_region
 
 
     # -------------------------
@@ -204,11 +205,12 @@ class Vision:
         if best:
 
             hold_region = frame[
-            int(best[1] + 0.02*best[3]): int(best[1] + 0.25*best[3]),
+            int(best[1] + 0.02*best[3]): int(best[1] + 0.20*best[3]),
             int(best[0] - 0.5*best[2]): int(best[0] - 0.05*best[2])
             ]
-            cv2.imshow("hold", hold_region)
-            return hold_region
+            if hold_region.size>0:
+                cv2.imshow("hold", hold_region)
+                return hold_region
 
 
 
